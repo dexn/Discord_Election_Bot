@@ -620,6 +620,29 @@ async def config_edit(interaction: discord.Interaction, setting: str, value: str
 @bot.tree.command(name="config_view", description="View bot configuration")
 async def config_view(interaction: discord.Interaction):
     try:
+        # Check if user has permitted nomination roles or voting roles
+        nom_valid, _ = check_roles(
+            interaction, 
+            "permitted_nominate_member_role_ids", 
+            "permitted_nominate_alliance_role_ids"
+        )
+        vote_valid, _ = check_roles(
+            interaction, 
+            "permitted_vote_member_role_ids", 
+            "permitted_vote_alliance_role_ids"
+        )
+        
+        # Check if user is a moderator or admin
+        mod_role_id = config.get("mod_role_id")
+        user_role_ids = [r.id for r in interaction.user.roles]
+        is_mod_user = mod_role_id in user_role_ids or interaction.user.guild_permissions.administrator
+
+        if not (nom_valid or vote_valid or is_mod_user):
+            return await interaction.response.send_message(
+                "❌ You do not have the required roles to view the configuration.", 
+                ephemeral=True
+            )
+
         print(f"Checking config file path: {os.path.abspath(CONFIG_FILE)}")
         print(f"File exists: {os.path.exists(CONFIG_FILE)}")
         
