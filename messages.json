@@ -1,0 +1,6 @@
+{
+  "nomination_announcement": "📢 **Presidential Nominations are now OPEN!**\nAlliances, click the button below to nominate your candidates.",
+  "voting_announcement": "🗳️ **Presidential Voting is now OPEN!**\nCandidates running in this election:\n{candidate_list}\n\nClick the button below to cast your alliance's vote.",
+  "tiebreak_announcement": "⚖️ **TIE-BREAK VOTE REQUIRED!**\nThere is a tie between the following candidates:\n{candidate_list}\n\nClick below to cast your tie-break vote.",
+  "winner_announcement": "🎉 **CONGRATULATIONS!** 🎉\nWe are proud to announce the winner of the Presidential Election: **{winner}**!"
+}
