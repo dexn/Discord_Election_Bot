@@ -672,6 +672,28 @@ async def election_start_early(interaction: discord.Interaction):
     await start_nomination_phase()
     await interaction.response.send_message("🚀 Election cycle manually initiated!", ephemeral=True)
 
+@bot.tree.command(name="election_cancel", description="Cancel the currently running election (Mod Only)")
+@is_mod()
+async def election_cancel(interaction: discord.Interaction):
+    if state["phase"] == "IDLE":
+        return await interaction.response.send_message("❌ There is no active election to cancel.", ephemeral=True)
+
+    # Clean up the ongoing channel notifications
+    await delete_previous_notification()
+
+    # Reset state to IDLE
+    state["phase"] = "IDLE"
+    state["nominations"] = {}
+    state["votes"] = {}
+    state["tiebreak_votes"] = {}
+    state["end_time"] = None
+    if "tiebreak_candidates" in state:
+        del state["tiebreak_candidates"]
+
+    save_json(STATE_FILE, state)
+
+    await interaction.response.send_message("⏹️ The current election cycle has been manually cancelled and reset.", ephemeral=True)
+
 @bot.tree.command(name="nominate", description="Shortcut command to trigger nomination modal")
 async def nominate_cmd(interaction: discord.Interaction):
     if state["phase"] != "NOMINATIONS":
