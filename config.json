@@ -1,0 +1,20 @@
+{
+    "mod_role_id": 1111111111111111111,
+    "staff_channel_id": 2222222222222222222,
+    "member_channel_id": 3333333333333333333,
+    "nominations_per_alliance": 2,
+    "votes_per_alliance": 1,
+    "tiebreak_votes_per_alliance": 1,
+    "permitted_nominate_member_role_ids": [4444444444444444444, 5555555555555555555],
+    "permitted_nominate_alliance_role_ids": [6666666666666666666, 7777777777777777777],
+    "permitted_vote_member_role_ids": [4444444444444444444, 5555555555555555555],
+    "permitted_vote_alliance_role_ids": [6666666666666666666, 7777777777777777777],
+    "timezone": "America/Noronha",
+    "initial_start_datetime": "2026-01-01 00:00:00",
+    "repeat_frequency_days": 14,
+    "nomination_length_hours": 48,
+    "voting_length_hours": 48,
+    "tiebreak_length_hours": 24,
+    "calendar_address": "primary_or_calendar_id@group.calendar.google.com",
+    "calendar_event_title": "Capital Clash"
+}
