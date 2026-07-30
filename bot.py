@@ -694,6 +694,33 @@ async def election_cancel(interaction: discord.Interaction):
 
     await interaction.response.send_message("⏹️ The current election cycle has been manually cancelled and reset.", ephemeral=True)
 
+@bot.tree.command(name="election_skip_phase", description="End the current phase and proceed to the next (Mod Only)")
+@is_mod()
+async def election_skip_phase(interaction: discord.Interaction):
+    current_phase = state.get("phase")
+    
+    if current_phase == "IDLE":
+        return await interaction.response.send_message(
+            "❌ The election is currently IDLE. Use `/election_start_early` to begin a new cycle.", 
+            ephemeral=True
+        )
+        
+    elif current_phase == "NOMINATIONS":
+        await start_voting_phase()
+        await interaction.response.send_message(
+            "⏭️ **Phase Skipped:** The nomination phase was ended early. Voting has now started!", 
+            ephemeral=True
+        )
+        
+    elif current_phase in ["VOTING", "TIEBREAK"]:
+        # finalize_election automatically handles checking for tiebreaks
+        # or officially ending the election and announcing the winner.
+        await finalize_election()
+        await interaction.response.send_message(
+            "⏭️ **Phase Skipped:** The voting phase was ended early. The election is being finalized!", 
+            ephemeral=True
+        )
+
 @bot.tree.command(name="nominate", description="Shortcut command to trigger nomination modal")
 async def nominate_cmd(interaction: discord.Interaction):
     if state["phase"] != "NOMINATIONS":
