@@ -1,4 +1,4 @@
-# Discord Alliance Election Bot
+# Discord Election Bot
 
 This is a fully automated Discord bot designed to manage cyclic, alliance-based elections within a server. It handles everything from scheduled nominations and voting phases to tiebreaks, result auditing, and Google Calendar integration.
 
