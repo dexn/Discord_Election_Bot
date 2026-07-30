@@ -102,6 +102,7 @@ The bot relies heavily on `config.json` to define roles, channels, and timings. 
 
 * **`/config_edit <setting> <value>`**: Edit any value in `config.json` dynamically. Features autocomplete for setting names.
 * **`/election_start_early`**: Bypasses the scheduler and forces the nomination phase to begin immediately.
+* **`/election_skip_phase`**: Instantly ends the current phase and forces the election to progress to the next step.
 * **`/election_cancel`**: Aborts the current election, deletes active menus, and resets the bot to the IDLE state.
 
 ### General / Alliance Commands
