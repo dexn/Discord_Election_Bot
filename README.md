@@ -72,9 +72,9 @@ The bot relies heavily on `config.json` to define roles, channels, and timings. 
 
 ### Timing & Scheduling
 
-* **`timezone`**: The timezone for scheduling (e.g., `"Australia/Brisbane"`, `"UTC"`).
+* **`timezone`**: The timezone for scheduling (e.g., `"America/Noronha"`, `"Etc/GMT+2"`).
 * **`initial_start_datetime`**: When the next election should start, formatted as `"YYYY-MM-DD HH:MM:SS"`.
-* **`repeat_frequency_days`**: How many days between automatic elections (e.g., `30`).
+* **`repeat_frequency_days`**: How many days between automatic elections (e.g., `14`).
 * **`nomination_length_hours`**: Duration of the nomination phase.
 * **`voting_length_hours`**: Duration of the voting phase.
 * **`tiebreak_length_hours`**: Duration of the tiebreak phase.
