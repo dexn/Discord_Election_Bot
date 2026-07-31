@@ -511,15 +511,43 @@ async def finalize_election():
 
     staff_chan = bot.get_channel(config.get("staff_channel_id"))
     if staff_chan:
-        audit_msg = f"📊 **ELECTION RESULTS SUMMARY**\n**Winner:** {winner}\n\n**Vote Breakdown:**\n"
-        for cand, count in tally.items():
-            audit_msg += f"• **{cand}**: {count} vote(s)\n"
+        def build_audit_map(source_dict):
+            audit_map = {}
+            for alliance_id, item_list in source_dict.items():
+                for item in item_list:
+                    audit_map.setdefault(item, []).append(alliance_id)
+            return audit_map
+
+        audit_msg = f"📊 **ELECTION RESULTS SUMMARY**\n🏆 **Winner:** {winner}\n\n"
         
-        audit_msg += "\n**Detailed Alliance Audit:**\n"
-        for alliance_id, vlist in vote_source.items():
-            audit_msg += f"• Alliance `<@&{alliance_id}>` voted for: {', '.join(vlist)}\n"
-        
-        await staff_chan.send(audit_msg)
+        noms_map = build_audit_map(state["nominations"])
+        audit_msg += "**📜 Nominations Audit:**\n"
+        if not noms_map:
+            audit_msg += "• No nominations recorded.\n"
+        for nom, alliances in noms_map.items():
+            alliance_tags = ", ".join([f"<@&{aid}>" for aid in alliances])
+            audit_msg += f"• **{nom}** (Nominated by: {alliance_tags})\n"
+
+        votes_map = build_audit_map(state["votes"])
+        audit_msg += "\n**🗳️ Standard Voting Audit:**\n"
+        if not votes_map:
+            audit_msg += "• No standard votes recorded.\n"
+        for cand, alliances in votes_map.items():
+            alliance_tags = ", ".join([f"<@&{aid}>" for aid in alliances])
+            audit_msg += f"• **{cand}**: {len(alliances)} vote(s) (Voted by: {alliance_tags})\n"
+
+        tb_votes_map = build_audit_map(state["tiebreak_votes"])
+        if tb_votes_map:
+            audit_msg += "\n**⚖️ Tie-Break Voting Audit:**\n"
+            for cand, alliances in tb_votes_map.items():
+                alliance_tags = ", ".join([f"<@&{aid}>" for aid in alliances])
+                audit_msg += f"• **{cand}**: {len(alliances)} vote(s) (Voted by: {alliance_tags})\n"
+
+        try:
+            await staff_chan.send(audit_msg)
+        except discord.HTTPException:
+            await staff_chan.send("❌ The audit is too large to display in a single Discord message, but results have been saved to the logs.")
+    # -----------------------------------
 
     member_chan = bot.get_channel(config.get("member_channel_id"))
     if member_chan:
