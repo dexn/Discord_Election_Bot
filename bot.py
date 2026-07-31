@@ -793,20 +793,44 @@ async def results_view(interaction: discord.Interaction):
     if is_staff:
         msg = f"📊 **FULL ELECTION RESULTS ({last_res.get('timestamp')})**\n"
         msg += f"🏆 **Winner:** {last_res.get('winner')}\n\n"
-        msg += "**Tally:**\n"
-        for k, v in last_res.get("vote_counts", {}).items():
-            msg += f"• {k}: {v} votes\n"
         
-        msg += "\n**Detailed Alliance Breakdown:**\n"
-        for alliance_id, vlist in last_res.get("votes_by_alliance", {}).items():
-            msg += f"• `<@&{alliance_id}>`: {', '.join(vlist)}\n"
-        await interaction.response.send_message(msg, ephemeral=True)
-    else:
-        msg = f"🏆 **ELECTION WINNER:** {last_res.get('winner')}\n\n"
-        msg += "**Tally:**\n"
-        for k, v in last_res.get("vote_counts", {}).items():
-            msg += f"• {k}: {v} votes\n"
-        await interaction.response.send_message(msg, ephemeral=True)
+        def build_audit_map(source_dict):
+            audit_map = {}
+            for alliance_id, item_list in source_dict.items():
+                for item in item_list:
+                    audit_map.setdefault(item, []).append(alliance_id)
+            return audit_map
+
+        noms_map = build_audit_map(last_res.get("nominations_by_alliance", {}))
+        msg += "**📜 Nominations Audit:**\n"
+        if not noms_map:
+            msg += "• No nominations recorded.\n"
+        for nom, alliances in noms_map.items():
+            alliance_tags = ", ".join([f"<@&{aid}>" for aid in alliances])
+            msg += f"• **{nom}** (Nominated by: {alliance_tags})\n"
+
+        votes_map = build_audit_map(last_res.get("votes_by_alliance", {}))
+        msg += "\n**🗳️ Standard Voting Audit:**\n"
+        if not votes_map:
+            msg += "• No standard votes recorded.\n"
+        for cand, alliances in votes_map.items():
+            alliance_tags = ", ".join([f"<@&{aid}>" for aid in alliances])
+            msg += f"• **{cand}**: {len(alliances)} vote(s) (Voted by: {alliance_tags})\n"
+
+        tb_votes_map = build_audit_map(last_res.get("tiebreak_votes_by_alliance", {}))
+        if tb_votes_map:
+            msg += "\n**⚖️ Tie-Break Voting Audit:**\n"
+            for cand, alliances in tb_votes_map.items():
+                alliance_tags = ", ".join([f"<@&{aid}>" for aid in alliances])
+                msg += f"• **{cand}**: {len(alliances)} vote(s) (Voted by: {alliance_tags})\n"
+
+        try:
+            await interaction.response.send_message(msg, ephemeral=True)
+        except discord.HTTPException:
+            await interaction.response.send_message(
+                "❌ The audit is too large to display in a single Discord message.", 
+                ephemeral=True
+            )
 
 # ==========================================
 # BOT EVENTS & EXECUTION
