@@ -626,10 +626,12 @@ async def config_edit(interaction: discord.Interaction, setting: str, value: str
     if setting not in current_config:
         return await interaction.response.send_message(f"❌ Setting `{setting}` not found.", ephemeral=True)
 
-    try:
+try:
         # Determine data type from existing config structure
         target_val = current_config[setting]
-        if isinstance(target_val, int):
+        if isinstance(target_val, bool):
+            parsed_val = value.lower() in ["true", "yes", "1", "t", "y"]
+        elif isinstance(target_val, int):
             parsed_val = int(value)
         elif isinstance(target_val, list):
             parsed_val = [int(x.strip()) for x in value.split(",")]
