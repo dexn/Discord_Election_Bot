@@ -488,7 +488,11 @@ async def finalize_election():
             tally[candidate] = tally.get(candidate, 0) + 1
 
     if not tally:
-        winner = "Nobody (No votes cast)"
+        history = load_json(WINNER_HISTORY_FILE, [])
+        if history:
+            winner = history[-1].get("winner", "Nobody (Invalid history format)")
+        else:
+            winner = "Nobody (No votes cast & no previous winner exists)"
         max_votes = 0
     else:
         max_votes = max(tally.values())
