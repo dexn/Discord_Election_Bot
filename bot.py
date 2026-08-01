@@ -298,6 +298,14 @@ class VoteDropdownView(discord.ui.View):
         limit_key = "tiebreak_votes_per_alliance" if self.is_tiebreak else "votes_per_alliance"
         
         alliance_votes = state[store_key].setdefault(self.alliance_role_id, [])
+        
+        allow_multiple = config.get("allow_multiple_votes_same_candidate", False)
+        if not allow_multiple and selected_candidate in alliance_votes:
+            return await interaction.response.send_message(
+                f"❌ Your alliance has already voted for **{selected_candidate}**. You cannot cast multiple votes for the same candidate.",
+                ephemeral=True
+            )
+
         alliance_votes.append(selected_candidate)
         save_json(STATE_FILE, state)
 
