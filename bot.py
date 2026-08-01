@@ -764,7 +764,8 @@ async def nominate_cmd(interaction: discord.Interaction):
         return await interaction.response.send_message("Nominations are not currently open.", ephemeral=True)
     
     view = NominateButtonView()
-    await view.nominate_click.callback(view, interaction)
+    # ONLY pass the interaction to the callback
+    await view.nominate_click.callback(interaction) 
 
 @bot.tree.command(name="vote", description="Shortcut command to trigger voting modal")
 async def vote_cmd(interaction: discord.Interaction):
@@ -773,7 +774,8 @@ async def vote_cmd(interaction: discord.Interaction):
 
     is_tb = (state["phase"] == "TIEBREAK")
     view = VoteButtonView(is_tiebreak=is_tb)
-    await view.vote_click.callback(view, interaction)
+    # ONLY pass the interaction to the callback
+    await view.vote_click.callback(interaction)
 
 @bot.tree.command(name="reset_alliance_nominations", description="Reset nominations for your alliance")
 async def reset_alliance_nominations(interaction: discord.Interaction):
