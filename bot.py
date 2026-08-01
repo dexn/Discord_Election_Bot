@@ -440,13 +440,19 @@ async def start_nomination_phase():
 async def start_voting_phase():
     await delete_previous_notification()
     
+    candidates = [c for noms in state["nominations"].values() for c in noms]
+    unique_candidates = list(set(candidates))
+    
+    if len(unique_candidates) <= 1:
+        await finalize_election()
+        return
+
     state["phase"] = "VOTING"
     hours = config.get("voting_length_hours", 24)
     end_dt = datetime.now(pytz.utc) + timedelta(hours=hours)
     state["end_time"] = end_dt.isoformat()
 
-    candidates = [c for noms in state["nominations"].values() for c in noms]
-    candidates_formatted = "\n".join([f"• {c}" for c in set(candidates)]) or "No candidates nominated."
+    candidates_formatted = "\n".join([f"• {c}" for c in unique_candidates])
 
     staff_chan = bot.get_channel(config.get("staff_channel_id"))
     if staff_chan:
@@ -487,12 +493,18 @@ async def finalize_election():
         for candidate in votes_list:
             tally[candidate] = tally.get(candidate, 0) + 1
 
-    if not tally:
-        history = load_json(WINNER_HISTORY_FILE, [])
-        if history:
-            winner = history[-1].get("winner", "Nobody (Invalid history format)")
+if not tally:
+        all_noms = [c for noms in state.get("nominations", {}).values() for c in noms]
+        unique_noms = list(set(all_noms))
+        
+        if len(unique_noms) == 1:
+            winner = unique_noms[0]
         else:
-            winner = "Nobody (No votes cast & no previous winner exists)"
+            history = load_json(WINNER_HISTORY_FILE, [])
+            if history:
+                winner = history[-1].get("winner", "Nobody (Invalid history format)")
+            else:
+                winner = "Nobody (No votes cast & no previous winner exists)"
         max_votes = 0
     else:
         max_votes = max(tally.values())
