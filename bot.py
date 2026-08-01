@@ -626,7 +626,7 @@ async def config_edit(interaction: discord.Interaction, setting: str, value: str
     if setting not in current_config:
         return await interaction.response.send_message(f"❌ Setting `{setting}` not found.", ephemeral=True)
 
-try:
+    try:
         # Determine data type from existing config structure
         target_val = current_config[setting]
         if isinstance(target_val, bool):
@@ -637,7 +637,6 @@ try:
             parsed_val = [int(x.strip()) for x in value.split(",")]
         else:
             parsed_val = value
-
         temp_config = current_config.copy()
         temp_config[setting] = parsed_val
         alliances_len = len(temp_config.get("permitted_nominate_alliance_role_ids", []))
