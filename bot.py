@@ -52,12 +52,12 @@ def save_json(filepath, data):
 config = load_json(CONFIG_FILE, {})
 messages = load_json(MESSAGES_FILE, {})
 state = load_json(STATE_FILE, {
-    "phase": "IDLE",  # IDLE, NOMINATIONS, VOTING, TIEBREAK
+    "phase": "IDLE",
     "nominations": {}, 
     "votes": {},       
     "tiebreak_votes": {},
     "end_time": None,
-    "notification_message_id": None  # Tracks the active notification to delete later
+    "notification_message_id": None
 })
 
 # ==========================================
@@ -110,7 +110,6 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Helper: Role Verification
 def check_roles(interaction: discord.Interaction, member_role_key: str, alliance_role_key: str):
     user_role_ids = [role.id for role in interaction.user.roles]
     
@@ -125,7 +124,6 @@ def check_roles(interaction: discord.Interaction, member_role_key: str, alliance
     
     return True, str(user_alliance_roles[0])
 
-# Helper: Limits Validation
 def validate_max_items_limit():
     alliances = len(config.get("permitted_nominate_alliance_role_ids", []))
     noms_per_alliance = config.get("nominations_per_alliance", 1)
@@ -267,7 +265,6 @@ class NominateButtonView(discord.ui.View):
 
         view = NominateDropdownView(interaction.guild, alliance_role_id)
         
-        # If triggered from the persistent button, we respond normally. If from a slash command, we edit or send.
         if interaction.response.is_done():
             await interaction.followup.send(
                 f"**Currently Nominated Members (All Alliances):**\n{all_noms_str}\n\nPlease choose your candidate:",
@@ -414,7 +411,7 @@ async def delete_previous_notification():
                 msg = await staff_chan.fetch_message(msg_id)
                 await msg.delete()
             except discord.NotFound:
-                pass  # Message was already deleted manually
+                pass
             except discord.HTTPException as e:
                 print(f"Failed to delete notification message: {e}")
     
@@ -555,7 +552,6 @@ async def finalize_election():
             await staff_chan.send(audit_msg)
         except discord.HTTPException:
             await staff_chan.send("❌ The audit is too large to display in a single Discord message, but results have been saved to the logs.")
-    # -----------------------------------
 
     member_chan = bot.get_channel(config.get("member_channel_id"))
     if member_chan:
@@ -564,7 +560,6 @@ async def finalize_election():
 
     update_google_calendar_event(winner)
 
-# Loop Task to manage transitions
 @tasks.loop(seconds=30)
 async def election_scheduler():
     if state["phase"] == "IDLE":
@@ -606,28 +601,24 @@ def is_mod():
     return app_commands.check(predicate)
 
 async def setting_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
-    # Pull all current keys from the config file dynamically
     current_config = load_json(CONFIG_FILE, config)
     keys = list(current_config.keys())
     
-    # Filter choices based on what the user is typing
     return [
         app_commands.Choice(name=key, value=key)
         for key in keys if current.lower() in key.lower()
-    ][:25] # Discord allows a maximum of 25 autocomplete choices
+    ][:25]
 
 @bot.tree.command(name="config_edit", description="Edit bot configuration settings (Mod Only)")
 @app_commands.autocomplete(setting=setting_autocomplete)
 @is_mod()
 async def config_edit(interaction: discord.Interaction, setting: str, value: str):
-    # Force load latest config
     current_config = load_json(CONFIG_FILE, config)
     
     if setting not in current_config:
         return await interaction.response.send_message(f"❌ Setting `{setting}` not found.", ephemeral=True)
 
     try:
-        # Determine data type from existing config structure
         target_val = current_config[setting]
         if isinstance(target_val, bool):
             parsed_val = value.lower() in ["true", "yes", "1", "t", "y"]
@@ -657,7 +648,6 @@ async def config_edit(interaction: discord.Interaction, setting: str, value: str
 @bot.tree.command(name="config_view", description="View bot configuration")
 async def config_view(interaction: discord.Interaction):
     try:
-        # Check if user has permitted nomination roles or voting roles
         nom_valid, _ = check_roles(
             interaction, 
             "permitted_nominate_member_role_ids", 
@@ -669,7 +659,6 @@ async def config_view(interaction: discord.Interaction):
             "permitted_vote_alliance_role_ids"
         )
         
-        # Check if user is a moderator or admin
         mod_role_id = config.get("mod_role_id")
         user_role_ids = [r.id for r in interaction.user.roles]
         is_mod_user = mod_role_id in user_role_ids or interaction.user.guild_permissions.administrator
@@ -715,10 +704,8 @@ async def election_cancel(interaction: discord.Interaction):
     if state["phase"] == "IDLE":
         return await interaction.response.send_message("❌ There is no active election to cancel.", ephemeral=True)
 
-    # Clean up the ongoing channel notifications
     await delete_previous_notification()
 
-    # Reset state to IDLE
     state["phase"] = "IDLE"
     state["nominations"] = {}
     state["votes"] = {}
@@ -750,8 +737,6 @@ async def election_skip_phase(interaction: discord.Interaction):
         )
         
     elif current_phase in ["VOTING", "TIEBREAK"]:
-        # finalize_election automatically handles checking for tiebreaks
-        # or officially ending the election and announcing the winner.
         await finalize_election()
         await interaction.response.send_message(
             "⏭️ **Phase Skipped:** The voting phase was ended early. The election is being finalized!", 
@@ -764,7 +749,6 @@ async def nominate_cmd(interaction: discord.Interaction):
         return await interaction.response.send_message("Nominations are not currently open.", ephemeral=True)
     
     view = NominateButtonView()
-    # ONLY pass the interaction to the callback
     await view.nominate_click.callback(interaction) 
 
 @bot.tree.command(name="vote", description="Shortcut command to trigger voting modal")
@@ -774,12 +758,10 @@ async def vote_cmd(interaction: discord.Interaction):
 
     is_tb = (state["phase"] == "TIEBREAK")
     view = VoteButtonView(is_tiebreak=is_tb)
-    # ONLY pass the interaction to the callback
     await view.vote_click.callback(interaction)
 
 @bot.tree.command(name="reset_alliance_nominations", description="Reset nominations for your alliance")
 async def reset_alliance_nominations(interaction: discord.Interaction):
-    # Verify the user has member and alliance roles, and fetch their alliance role ID
     valid, alliance_role_id = check_roles(
         interaction, 
         "permitted_nominate_member_role_ids", 
@@ -797,7 +779,6 @@ async def reset_alliance_nominations(interaction: discord.Interaction):
 
 @bot.tree.command(name="reset_alliance_votes", description="Reset votes for your alliance")
 async def reset_alliance_votes(interaction: discord.Interaction):
-    # Verify the user has member and alliance roles, and fetch their alliance role ID
     valid, alliance_role_id = check_roles(
         interaction, 
         "permitted_vote_member_role_ids", 
