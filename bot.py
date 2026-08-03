@@ -143,18 +143,24 @@ class NonDiscordNomineeModal(discord.ui.Modal, title="Nominate Non-Discord Candi
         required=True
     )
 
-    def __init__(self, alliance_role_id, original_interaction: discord.Interaction):
+    def __init__(self, alliance_role_id):
         super().__init__()
         self.alliance_role_id = alliance_role_id
-        self.original_interaction = original_interaction
 
     async def on_submit(self, interaction: discord.Interaction):
-        nominee = self.candidate_name.value.strip()
         alliance_noms = state["nominations"].setdefault(self.alliance_role_id, [])
+        max_noms = config.get("nominations_per_alliance", 1)
+
+        if len(alliance_noms) >= max_noms:
+            return await interaction.response.edit_message(
+                content="❌ Your alliance has already reached the maximum number of nominations.",
+                view=None
+            )
+
+        nominee = self.candidate_name.value.strip()
         alliance_noms.append(nominee)
         save_json(STATE_FILE, state)
 
-        max_noms = config.get("nominations_per_alliance", 1)
         remaining = max_noms - len(alliance_noms)
 
         if remaining > 0:
@@ -215,7 +221,7 @@ class NominateDropdownView(discord.ui.View):
 
     @discord.ui.button(label="Nominate Non-Discord Member", style=discord.ButtonStyle.secondary, row=2)
     async def non_discord_btn(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_modal(NonDiscordNomineeModal(self.alliance_role_id, interaction))
+        await interaction.response.send_modal(NonDiscordNomineeModal(self.alliance_role_id))
 
 class ContinueNominationView(discord.ui.View):
     def __init__(self, alliance_role_id):
